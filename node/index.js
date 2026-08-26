@@ -86,14 +86,33 @@ class QQMusic {
 const app = require('express')();
 const qqMusic = new QQMusic();
 
+// 处理所有请求（包括根路径）
 app.get('*', async (req, res) => {
+  // 跨域头（双重保险）
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  const path = req.path.replace(/^\//, '');
+  // 如果是根路径，直接返回成功状态
+  if (path === '') {
+    return res.json({ status: 'ok', message: 'QQ Music API is running' });
+  }
+
   try {
-    const path = req.path.replace(/^\//, '');
     const result = await qqMusic.api(path, req.query);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// 处理 OPTIONS 预检请求（确保跨域顺利）
+app.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(200);
 });
 
 module.exports = app;
