@@ -100,6 +100,11 @@ app.get('*', async (req, res) => {
     return res.json({ status: 'ok', message: 'QQ Music API is running' });
   }
 
+  // 🛠️ 修复：将 keyword 参数映射为 key（搜索接口需要）
+  if (path === 'search' && req.query.keyword) {
+    req.query.key = req.query.keyword;
+  }
+
   // 其他路径正常调用 API
   try {
     const result = await qqMusic.api(path, req.query);
