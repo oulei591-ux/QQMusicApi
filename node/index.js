@@ -86,7 +86,7 @@ class QQMusic {
 const app = require('express')();
 const qqMusic = new QQMusic();
 
-// ========== 跨域中间件（统一处理） ==========
+// 跨域中间件（万能胶水）
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -97,41 +97,42 @@ app.use((req, res, next) => {
   next();
 });
 
-// ========== 专门的测试连接接口（App 友好） ==========
-app.get('/ping', (req, res) => {
-  res.json({ code: 200, message: 'pong' });
-});
-
-// ========== 根路径：返回 App 期望的格式 ==========
+// 根路径返回小手机App喜欢的 { code: 200 }
 app.get('/', (req, res) => {
   res.json({ code: 200 });
 });
 
-// ========== 其他所有 GET 请求（搜索、歌曲详情等） ==========
+// 搜索接口：自动将 keyword 转为 key
+app.get('/search', async (req, res) => {
+  try {
+    if (req.query.keyword) {
+      req.query.key = req.query.keyword;
+    }
+    const result = await qqMusic.api('search', req.query);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 其他所有路径：如果是未知路径，也返回 200（防止App测试报错）
 app.get('*', async (req, res) => {
   try {
     const path = req.path.replace(/^\//, '');
-    // 如果是空路径（已由上面处理），但以防万一
-    if (!path) {
-      return res.json({ code: 200 });
-    }
-
-    // 修复：将 keyword 映射为 key（搜索接口需要）
-    if (path === 'search' && req.query.keyword) {
-      req.query.key = req.query.keyword;
-    }
-
+    if (!path) return res.json({ code: 200 });
     const result = await qqMusic.api(path, req.query);
     res.json(result);
   } catch (err) {
-    // 如果错误是“wrong path”，说明路径不存在，返回 200 让 App 测试通过
     if (err.message === 'wrong path') {
       return res.json({ code: 200 });
     }
-    // 其他错误（如网络、解析等）返回 500
-    console.error('API Error:', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// 额外支持 POST 请求（某些App测试用POST）
+app.post('*', (req, res) => {
+  res.json({ code: 200 });
 });
 
 module.exports = app;
