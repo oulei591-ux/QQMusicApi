@@ -88,13 +88,13 @@ const qqMusic = new QQMusic();
 
 // 处理所有请求（包括根路径）
 app.get('*', async (req, res) => {
-  // 跨域头（双重保险）
+  // 跨域头
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const path = req.path.replace(/^\//, '');
-  // 如果是根路径，直接返回成功状态
+  // 如果是根路径，直接返回成功
   if (path === '') {
     return res.json({ status: 'ok', message: 'QQ Music API is running' });
   }
