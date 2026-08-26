@@ -83,4 +83,17 @@ class QQMusic {
   }
 }
 
-module.exports = new QQMusic();
+const app = require('express')();
+const qqMusic = new QQMusic();
+
+app.get('*', async (req, res) => {
+  try {
+    const path = req.path.replace(/^\//, '');
+    const result = await qqMusic.api(path, req.query);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = app;
