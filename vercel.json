@@ -2,11 +2,11 @@
   "installCommand": "npm install",
   "builds": [
     {
-      "src": "app.js",
+      "src": "node/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "app.js" }
+    { "src": "/(.*)", "dest": "node/index.js" }
   ]
 }
