@@ -94,11 +94,13 @@ app.get('*', async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const path = req.path.replace(/^\//, '');
-  // 如果是根路径，直接返回成功
-  if (path === '') {
+  
+  // 如果是根路径，直接返回成功，不调用 API
+  if (!path || path === '') {
     return res.json({ status: 'ok', message: 'QQ Music API is running' });
   }
 
+  // 其他路径正常调用 API
   try {
     const result = await qqMusic.api(path, req.query);
     res.json(result);
