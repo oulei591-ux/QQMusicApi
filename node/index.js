@@ -86,40 +86,47 @@ class QQMusic {
 const app = require('express')();
 const qqMusic = new QQMusic();
 
-// 处理所有请求（包括根路径）
-app.get('*', async (req, res) => {
-  // 跨域头
+// ========== 跨域中间件（统一处理） ==========
+app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  const path = req.path.replace(/^\//, '');
-  
-  // 如果是根路径，直接返回成功，不调用 API
-  if (!path || path === '') {
-    return res.json({ status: 'ok', message: 'QQ Music API is running' });
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
   }
+  next();
+});
 
-  // 🛠️ 修复：将 keyword 参数映射为 key（搜索接口需要）
-  if (path === 'search' && req.query.keyword) {
-    req.query.key = req.query.keyword;
-  }
+// ========== 专门的测试连接接口（App 友好） ==========
+app.get('/ping', (req, res) => {
+  res.json({ code: 200, message: 'pong' });
+});
 
-  // 其他路径正常调用 API
+// ========== 根路径：返回 App 期望的格式 ==========
+app.get('/', (req, res) => {
+  res.json({ code: 200 });
+});
+
+// ========== 其他所有 GET 请求（搜索、歌曲详情等） ==========
+app.get('*', async (req, res) => {
   try {
+    const path = req.path.replace(/^\//, '');
+    // 如果是空路径（已由上面处理），但以防万一
+    if (!path) {
+      return res.json({ code: 200 });
+    }
+
+    // 修复：将 keyword 映射为 key（搜索接口需要）
+    if (path === 'search' && req.query.keyword) {
+      req.query.key = req.query.keyword;
+    }
+
     const result = await qqMusic.api(path, req.query);
     res.json(result);
   } catch (err) {
+    console.error('API Error:', err.message, err.stack);
     res.status(500).json({ error: err.message });
   }
-});
-
-// 处理 OPTIONS 预检请求（确保跨域顺利）
-app.options('*', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.sendStatus(200);
 });
 
 module.exports = app;
